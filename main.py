@@ -103,7 +103,6 @@ async def on_message( message ):
 
         if pledge.relationships()['reward']['data']:
             reward_tier = pledge.relationship('reward').attribute('amount_cents')
-
             pledges_info.append({
                 'patron_status': pledge.relationship('reward').attribute('status'),
                 'tier': pledge.relationship('reward').attribute('title'),
@@ -145,25 +144,26 @@ async def on_message( message ):
         lambda r: r.name == singlePatreonRole, message.guild.roles)
         
         for user in message.guild.members:
+            foundUser = 0
             if role in user.roles:
-                foundUser = 0
                 if not pledges_info:
                     print(f"{now} - Role {role.name} was removed from {user.name}")
                     await user.remove_roles(role)
 
                 for pledgeID in pledges_info: 
-                    if int(user.id) == int(pledgeID['discord_id']):
-                        if readTier == 'id':
-                            for singlePledgeRole in pledgeID['discord_role']:
-                                if int(role.id) == int(singlePledgeRole):
+                    if foundUser != 1: 
+                        if int(user.id) == int(pledgeID['discord_id']):
+                            if readTier == 'id':
+                                for singlePledgeRole in pledgeID['discord_role']:
+                                    if int(role.id) == int(singlePledgeRole):
+                                        foundUser = 1
+
+                            if readTier == 'name':
+                                if role.name == pledgeID['tier']:
                                     foundUser = 1
 
-                        if readTier == 'name':
-                            if role.name == pledge['tier']:
-                                foundUser = 1
-
-                    if foundUser == 0:
-                        print(f"{now} - Role {role.name} was removed from {user.name}")
-                        await user.remove_roles(role)        
+                if foundUser == 0:
+                    print(f"{now} - Role {role.name} was removed from {user.name}")
+                    await user.remove_roles(role)        
                 
 bot.run(os.getenv("BOT_TOKEN"))
