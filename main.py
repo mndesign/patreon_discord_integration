@@ -19,7 +19,7 @@ bot = commands.Bot(
 os.system('cls' if os.name == 'nt' else 'clear')
 
 #id = uses the roles added to the tier through the Patreon bot
-#name = reads the tier name and matches it to the discord role
+#name = reads the tier name and matches it to the discord role without of using the Patreon bot
 readTier = 'name' 
 
 @bot.event
