@@ -47,7 +47,6 @@ async def on_message( message ):
     else:
         compList = []
         delList = []
-
         
         tierFile = open('tiers.txt', 'r')
         for savedTier in tierFile:
