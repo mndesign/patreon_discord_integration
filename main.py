@@ -2,6 +2,7 @@ import discord
 import os
 import patreon
 import datetime
+import random
 from os import path
 from dotenv import load_dotenv
 from startup import Startup
@@ -95,7 +96,7 @@ async def on_message( message ):
             break
 
     pledges_info = []
-    
+
     for pledge in all_pledges:
         declined = pledge.attribute('declined_since')
         reward_tier = 0
@@ -134,8 +135,31 @@ async def on_message( message ):
                             if not role in member.roles:
                                 print(f"{now} - Role {role.name} was assigned to {member.name}")
                                 await member.add_roles(role)
+
+                            if role.name == 'Elite' and 'Master' not in member.roles:
+                                roleMaster = get(message.guild.roles, name='Master')
+                                print(f"{now} - Role {roleMaster.name} was assigned to {member.name}")
+                                await member.add_roles(roleMaster)
                         else: 
-                            print(f"{now} - Missing role '{pledge['tier']}' in Discord Server")
+                            if pledge['tier'] == '2 Groups' and message.author.id == member.id:
+                                freeTiers = []
+                                for rewardRole in campaign_response.data()[0].relationship('rewards'):
+                                    if rewardRole.attribute('patron_count') != None and rewardRole.attribute('title') != 'Elite' and rewardRole.attribute('title') != 'Master' and rewardRole.attribute('title') != '2 Groups':
+                                        freeSpaces = rewardRole.attribute('user_limit') - rewardRole.attribute('patron_count')
+                                        if freeSpaces >= 1:
+                                            freeTiers.append([rewardRole.attribute('title'), freeSpaces])
+                                
+                                if freeTiers:
+                                    random.shuffle(freeTiers)
+                                    freeTierNr = 1
+                                    for freeRole in freeTiers:
+                                        if freeTierNr < 3:
+                                            role = get(message.guild.roles, name=freeRole[0])
+                                            if role:
+                                                if not role in member.roles:
+                                                    freeTierNr += 1
+                                                    print(f"{now} - Role {role.name} was assigned to {member.name}")
+                                                    await member.add_roles(role)
 
 
     for singlePatreonRole in PatreonRole:
@@ -150,16 +174,14 @@ async def on_message( message ):
                     await user.remove_roles(role)
 
                 for pledgeID in pledges_info: 
-                    if foundUser != 1: 
-                        if int(user.id) == int(pledgeID['discord_id']):
-                            if readTier == 'id':
-                                for singlePledgeRole in pledgeID['discord_role']:
-                                    if int(role.id) == int(singlePledgeRole):
-                                        foundUser = 1
+                    if foundUser != 1 and int(user.id) == int(pledgeID['discord_id']) and readTier == 'id': 
+                        for singlePledgeRole in pledgeID['discord_role']:
+                            if int(role.id) == int(singlePledgeRole):
+                                foundUser = 1
 
-                            if readTier == 'name':
-                                if role.name == pledgeID['tier']:
-                                    foundUser = 1
+                    if foundUser != 1 and int(user.id) == int(pledgeID['discord_id']) and readTier == 'name':
+                        if role.name == pledgeID['tier'] or pledgeID['tier'] == '2 Groups' or pledgeID['tier'] == 'Elite':
+                            foundUser = 1
 
                 if foundUser == 0:
                     print(f"{now} - Role {role.name} was removed from {user.name}")
